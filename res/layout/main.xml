@@ -4,9 +4,31 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
+    <EditText
+        android:id="@+id/spineIndex"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Spine Index">
+
+        <requestFocus />
+    </EditText>
+
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Load"
+        android:onClick="load" />
+
     <TextView
+        android:id="@+id/text"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/hello" />
+    
+    <WebView
+        android:id="@+id/webtext"
+        android:layout_width="fill_parent"
+        android:layout_height="400dp" />
 
 </LinearLayout>
