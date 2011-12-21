@@ -1,7 +1,9 @@
 package com.terlici.reader;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 import nl.siegmann.epublib.domain.Book;
@@ -15,14 +17,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
-import android.webkit.WebSettings;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.EditText;
 
 public class StartScreen extends Activity {
     /** Called when the activity is first created. */
-	
+	String paginatejs;
 	Book book;
 	
     @Override
@@ -30,6 +34,8 @@ public class StartScreen extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
+        loadjs();
+        prepare();
         logBook();
     }
     
@@ -67,20 +73,105 @@ public class StartScreen extends Activity {
     	}
     }
     
+    public String read(InputStream input) throws IOException {
+    	BufferedReader r = new BufferedReader(new InputStreamReader(input));
+    	StringBuilder total = new StringBuilder();
+    	String line;
+    	
+		while ((line = r.readLine()) != null) {
+			total.append(line);
+		}		
+    	
+    	return total.toString();
+    }
+    
+    public void loadjs() {
+    	Log.i("epublib", "Loading JS");
+    	AssetManager assetManager = getAssets();
+    	
+    	
+    	try {
+			paginatejs = read(assetManager.open("js/paginate.js"))
+						.replace('\r', ' ')
+						.replace('\n', ' ')
+						;
+			Log.i("epublib", paginatejs);
+		} catch (IOException e) {
+		}
+    }
+    
+    public void prepare() {
+    	WebView wbox = (WebView)findViewById(R.id.webtext);
+
+    	wbox.setWebViewClient(new WebViewClient() {
+    		@Override
+        	public WebResourceResponse shouldInterceptRequest(WebView view,
+        			String url) {
+        		Log.i("epublib", "Loading something: " + url);
+        		
+        		String prefix = "http://www.terlici.com/";
+        		if (url.startsWith(prefix)) {
+        			url = url.substring(prefix.length());
+        		}
+        		
+        		Log.i("epublib", "Real url: " + url);
+        		
+        		Resource r = book.getResources().getByHref(url);
+        		
+        		if (r != null) {
+        			WebResourceResponse response = null;
+        			
+        			try {
+    					response = new WebResourceResponse(r.getMediaType().toString(),
+    							r.getInputEncoding(), r.getInputStream());
+    				} catch (IOException e) {
+    					Log.i("epublib", "Problem loading resource: " + url);
+    				}
+        			
+        			if (response != null) {
+        				Log.i("epublib", "Loading: " + url);
+        				return response;
+        			}
+        		}
+        		
+        		return super.shouldInterceptRequest(view, url);
+        	}
+    		
+    		@Override
+    		public void onPageFinished(WebView view, String url) {
+    			Log.i("epublib", "Page Loaded");
+    			super.onPageFinished(view, url);
+    	        
+    	        view.loadUrl("javascript:(function() { " + paginatejs + "})()");
+    		}
+    	});
+    	wbox.setInitialScale(100);
+    	// Big - 42
+    	// Normal - 36
+    	// Small - 30
+    	wbox.getSettings().setMinimumFontSize(36);
+    	wbox.getSettings().setJavaScriptEnabled(true);
+    	wbox.setVerticalScrollBarEnabled(false);
+    	wbox.setHorizontalScrollBarEnabled(false);
+    	wbox.setOnTouchListener(new View.OnTouchListener() {
+
+    	    public boolean onTouch(View v, MotionEvent event) {
+    	      return (event.getAction() == MotionEvent.ACTION_MOVE);
+    	    }
+    	  });
+    }
+    
     public void load(View v) {
     	String value = ((EditText)findViewById(R.id.spineIndex)).getText().toString();
     	int index = Integer.parseInt(value);
     	
     	Resource r = book.getSpine().getResource(index);
-    	
     	String text = new String(r.getData());
-    	
-    	//TextView box = (TextView)findViewById(R.id.text);
-    	//box.setText(text);
-  
-    	
+
     	WebView wbox = (WebView)findViewById(R.id.webtext);
-    	wbox.loadDataWithBaseURL(null, text, "text/html", "utf-8", null);
+    	// The "http://www.terlici.com/" is necessary for shouldInterceptRequest
+    	// to be called.
+    	wbox.loadDataWithBaseURL("http://www.terlici.com/", text, "text/html", "utf-8", null);
     }
     
     private void logSpineTypes(List<SpineReference> spineReferences) {

@@ -20,15 +20,24 @@
         android:text="Load"
         android:onClick="load" />
 
+    <!-- 
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="400dp" 
+        >
+    
     <TextView
         android:id="@+id/text"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/hello" />
+    </ScrollView>
+     -->
     
     <WebView
         android:id="@+id/webtext"
         android:layout_width="fill_parent"
-        android:layout_height="400dp" />
+        android:layout_height="420dp" />
+        
 
 </LinearLayout>
