@@ -12,8 +12,8 @@ body.style.WebkitColumnCount = pageCount;
 body.style.WebkitColumnWidth = desiredWidth + "px";
 body.style.WebkitColumnGap = "10px";
 
-window.scrollBy(desiredWidth + 10,0);
-
 document.body.addEventListener('touchmove', function(e) {
-  e.preventDefault();
+	  e.preventDefault();
 }, false);
+
+window.scrollBy((desiredWidth + 10)*manager.getPage(),0);
