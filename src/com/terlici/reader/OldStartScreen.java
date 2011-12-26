@@ -101,7 +101,7 @@ public class OldStartScreen extends Activity {
     }
     
     public void prepare() {
-    	WebView wbox = (WebView)findViewById(R.id.webtext);
+    	WebView wbox = null;//(WebView)findViewById(R.id.webtext);
 
     	wbox.setWebViewClient(new WebViewClient() {
     		@Override
@@ -162,13 +162,13 @@ public class OldStartScreen extends Activity {
     }
     
     public void load(View v) {
-    	String value = ((EditText)findViewById(R.id.spineIndex)).getText().toString();
+    	String value = null;//((EditText)findViewById(R.id.spineIndex)).getText().toString();
     	int index = Integer.parseInt(value);
     	
     	Resource r = book.getSpine().getResource(index);
     	String text = new String(r.getData());
 
-    	WebView wbox = (WebView)findViewById(R.id.webtext);
+    	WebView wbox = null;//(WebView)findViewById(R.id.webtext);
     	// The "http://www.terlici.com/" is necessary for shouldInterceptRequest
     	// to be called.
     	wbox.loadDataWithBaseURL("http://www.terlici.com/", text, "text/html", "utf-8", null);

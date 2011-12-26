@@ -3,7 +3,7 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
-
+<!--
     <EditText
         android:id="@+id/spineIndex"
         android:layout_width="match_parent"
@@ -20,7 +20,7 @@
         android:text="Load"
         android:onClick="load" />
 
-    <!-- 
+     
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="400dp" 
@@ -32,12 +32,18 @@
         android:layout_height="wrap_content"
         android:text="@string/hello" />
     </ScrollView>
-     -->
+     
     
     <WebView
         android:id="@+id/webtext"
         android:layout_width="fill_parent"
         android:layout_height="420dp" />
-        
+     -->   
+     
+     <android.support.v4.view.ViewPager
+         android:id="@+id/pages"
+         android:layout_width="fill_parent"
+         android:layout_height="fill_parent"
+         />
 
 </LinearLayout>

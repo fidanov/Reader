@@ -1,19 +1,13 @@
 package com.terlici.reader;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import nl.siegmann.epublib.domain.Book;
-import nl.siegmann.epublib.domain.Resource;
 import android.content.Context;
-import android.content.res.AssetManager;
 import android.support.v4.view.PagerAdapter;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.webkit.WebView;
 
 public class EpubPageAdapter extends PagerAdapter {
@@ -24,8 +18,7 @@ public class EpubPageAdapter extends PagerAdapter {
 	JavascriptInterface mJS;
 	WebView mWebView;
 	Context mContext;
-	String computejs;
-	String paginatejs;
+	String mScript;
 	
 	View.OnTouchListener mPrevent = new View.OnTouchListener() {
 
@@ -34,106 +27,17 @@ public class EpubPageAdapter extends PagerAdapter {
 	    }
 	};
 	
-	public EpubPageAdapter(Context context, Book book) {
+	public EpubPageAdapter(Context context, Book book, int pages, int[] chapters) {
 		mContext = context;
 		mBook = book;
 		mJS = new JavascriptInterface();
 		mWebView = new WebView(context);
-		
-		
-		load();
+		mTotal = pages;
+		mChapters = chapters;
+		mScript = Utilities.loadjs(context, "js/paginate.js");
 	}
 	
-	private String read(InputStream input) throws IOException {
-    	BufferedReader r = new BufferedReader(new InputStreamReader(input));
-    	StringBuilder total = new StringBuilder();
-    	String line;
-    	
-		while ((line = r.readLine()) != null) {
-			total.append(line);
-		}		
-    	
-    	return total.toString();
-    }
-	
-	private void prepareWebViewForCompute() {
-		Log.i("Reader", "Preparing web view.");
-		
-		// Big - 42
-    	// Normal - 36
-    	// Small - 30
-		mWebView.getSettings().setMinimumFontSize(36);
-		mWebView.getSettings().setJavaScriptEnabled(true);
-		mWebView.setVerticalScrollBarEnabled(false);
-		mWebView.setHorizontalScrollBarEnabled(false);
-		mWebView.setInitialScale(100);
-		mWebView.setOnTouchListener(mPrevent);
-		mWebView.addJavascriptInterface(mJS, "manager");
-		mWebView.setWebViewClient(new PrepareWebView(mBook, computejs));
-		
-	}
-	
-	private void prepareWebViewForDisplay(WebView webview, int page) {
-		Log.i("Reader", "Preparing page.");
-		
-		mJS.setPage(page);
-		
-		// Big - 42
-    	// Normal - 36
-    	// Small - 30
-		webview.getSettings().setMinimumFontSize(36);
-		webview.getSettings().setJavaScriptEnabled(true);
-		webview.setVerticalScrollBarEnabled(false);
-		webview.setHorizontalScrollBarEnabled(false);
-		webview.setOnTouchListener(mPrevent);
-		webview.addJavascriptInterface(mJS, "manager");
-		webview.setWebViewClient(new PrepareWebView(mBook, paginatejs));
-		webview.setInitialScale(100);
-	}
-	
-	private void loadjs() {
-    	Log.i("Reader", "Loading javascript");
-    	
-    	AssetManager assetManager = mContext.getAssets();
-    	
-    	try {
-			computejs = read(assetManager.open("js/compute.js"))
-						.replace('\r', ' ')
-						.replace('\n', ' ')
-						;
-			
-			paginatejs = read(assetManager.open("js/paginate.js"))
-					.replace('\r', ' ')
-					.replace('\n', ' ')
-					;
-		} catch (IOException e) {}
-    }
-	
-	private void load() {
-		int size = mBook.getSpine().size();
-		mChapters = new int[size];
-		
-		Log.i("Reader", "Number of chapters: " + size);
-		
-		loadjs();
-		prepareWebViewForCompute();
-		
-		for (int i = 0; i < size; ++i) {
-			Resource r = mBook.getSpine().getResource(i);
-	    	String text = new String(r.getData());
-
-	    	// The "http://www.terlici.com/" is necessary for shouldInterceptRequest
-	    	// to be called.
-	    	mWebView.loadDataWithBaseURL("http://www.terlici.com/", text, "text/html", "utf-8", null);
-	    	mChapters[i] = mJS.getLast();
-		}
-		
-		mTotal = mJS.getTotal();
-		
-		Log.i("Reader","Number of pages: " + mTotal);
-	}
-	
-	private int page2chapter(int position) {
+	private int position2chapter(int position) {
 		int total = 0;
 		
 		for (int i = 0; i < mChapters.length; ++i) {
@@ -145,6 +49,19 @@ public class EpubPageAdapter extends PagerAdapter {
 		}
 		
 		return -1;
+	}
+	
+	private int position2page(int position) {
+		
+		for (int i = 0; i < mChapters.length; ++i) {
+			if (position < mChapters[i]) {
+				return position;
+			}
+			
+			position -= mChapters[i];
+		}
+		
+		return 0;
 	}
 
 	@Override
@@ -164,16 +81,43 @@ public class EpubPageAdapter extends PagerAdapter {
 	
 	@Override
 	public Object instantiateItem(ViewGroup container, int position) {
-		WebView page = new WebView(mContext);
-		prepareWebViewForDisplay(page, position);
+		int chapter = position2chapter(position);
+		int page = position2page(position);
 		
-		int chapter = page2chapter(position);
-		Resource r = mBook.getSpine().getResource(chapter);
-    	String text = new String(r.getData());
-    	page.loadDataWithBaseURL("http://www.terlici.com/", text, "text/html", "utf-8", null);
+		Log.d("Reader", position + " " + chapter + " " + page);
 		
-    	container.addView(page);
+		WebView webview = new WebViewBuilder(mContext)
+		.setBook(mBook)
+		.setChapter(chapter)
+		.setPage(page)
+		.setScript(mScript)
+		.setJavascriptInterface(mJS)
+		.getWebView();
+		
+		webview.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+		
+    	container.addView(webview);
+		
+		/*Resource r = mBook.getSpine().getResource(position);
+    	String content = new String(r.getData());
     	
-		return page;
+    	content = content.replace('\n', ' ');
+    	content = content.replace('\r', ' ');
+    	content = content.replace("blockquote", "p");
+    	content = content.replace("div", "span");
+    	content = content.substring(content.indexOf("<body>") + 6, content.indexOf("</body>"));
+    	
+    	new AlertDialog.Builder(mContext)
+    	.setMessage(content)
+    	.show();
+    	
+    	
+    	TextView webview = new TextView(mContext);
+    	webview.setTextColor(Color.WHITE);
+    	webview.setTextSize(TypedValue.COMPLEX_UNIT_PX, 36);
+    	webview.setText(Html.fromHtml(content));
+    	container.addView(webview);*/
+    	
+		return webview;
 	}
 }

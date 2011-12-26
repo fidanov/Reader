@@ -1,15 +1,8 @@
 package com.terlici.reader;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import nl.siegmann.epublib.domain.Book;
 import nl.siegmann.epublib.domain.Resource;
 import android.content.Context;
-import android.content.res.AssetManager;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
@@ -85,12 +78,18 @@ public class WebViewBuilder {
 		mWebView.setVerticalScrollBarEnabled(false);
 		mWebView.setHorizontalScrollBarEnabled(false);
 		mWebView.setInitialScale(100);
-		mWebView.setOnTouchListener(mPrevent);
+		//mWebView.setOnTouchListener(mPrevent);
 		mWebView.addJavascriptInterface(mJS, "manager");
 		mWebView.setWebViewClient(new PrepareWebView(mBook, mScript));
 		
 		Resource r = mBook.getSpine().getResource(mChapter);
     	String content = new String(r.getData());
+    	
+    	content = content.replace('\n', ' ');
+    	content = content.replace('\r', ' ');
+    	content = content.replace("blockquote", "p");
+    	//content = content.replace("div", "span");
+    	
     	mWebView.loadDataWithBaseURL("http://www.terlici.com/", content, "text/html", "utf-8", null);
 	}
 }

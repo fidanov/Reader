@@ -2,7 +2,6 @@ package com.terlici.reader;
 
 import nl.siegmann.epublib.domain.Book;
 import android.content.Context;
-import android.util.Log;
 import android.webkit.WebView;
 
 import com.terlici.reader.JavascriptInterface.FinishListener;
@@ -21,11 +20,12 @@ public class ComputeBook {
 	int[] mChapters;
 	String mScript;
 	
-	public ComputeBook(Context context, Book book) {
+	public ComputeBook(Context context, Book book, int w, int h) {
 		mContext = context;
 		mBook = book;
 		mJSI = new JavascriptInterface();
 		mWebView = new WebView(mContext);
+		mWebView.layout(0, 0, w, h);
 		mChapters = new int[mBook.getSpine().size()];
 		mScript = Utilities.loadjs(context, "js/compute.js");
 	}
@@ -35,8 +35,6 @@ public class ComputeBook {
 			
 			@Override
 			public void finished(JavascriptInterface jsi) {
-				Log.i("Reader", "Chapter " + current + ": " + jsi.getLast());
-				
 				mChapters[current] = jsi.getLast();
 				current++;
 				

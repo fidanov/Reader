@@ -1,5 +1,7 @@
 package com.terlici.reader;
 
+import android.util.Log;
+
 
 
 public class JavascriptInterface {
@@ -49,5 +51,9 @@ public class JavascriptInterface {
 		if (mListener != null) {
 			mListener.finished(this);
 		}
+	}
+	
+	public void log(String s) {
+		Log.i("Reader", s);
 	}
 }
